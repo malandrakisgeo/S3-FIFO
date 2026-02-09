@@ -17,7 +17,6 @@ class value_wrapper{
     }
 
     void decrease_hits(){
-
         --hits;
     }
 

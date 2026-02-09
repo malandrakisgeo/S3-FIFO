@@ -12,7 +12,7 @@ using namespace std;
 #include "generic_cache.hpp"
 #endif 
 
-#define DEFAULT_SIZE 1000;
+#define DEFAULT_SIZE 100;
 
 template < typename key, typename value >
 class fifo_cache_wrapped: public CacheI < key, value > {
@@ -20,7 +20,7 @@ class fifo_cache_wrapped: public CacheI < key, value > {
         value_wrapper < value >> key_value_pair_t;
         fifo_cache_wrapped() {
             this -> max_size = DEFAULT_SIZE;
-            this -> fifo_queue = std::deque < key_value_pair_t > (); //TODO: perhaps move to  heap?
+            this -> fifo_queue = std::deque <key_value_pair_t> (); 
         }
 
         ~fifo_cache_wrapped() {
@@ -28,13 +28,13 @@ class fifo_cache_wrapped: public CacheI < key, value > {
         }
 
         fifo_cache_wrapped(const size_t size) {
-            this -> max_size = size;
-            this -> fifo_queue = std::deque < key_value_pair_t > (); //to kaname initialize me megethos size, opote h C tou evaze dedomena...
+            this -> max_size = size > 0 ? size : DEFAULT_SIZE;
+            this -> fifo_queue = std::deque <key_value_pair_t> (); 
         }
 
         fifo_cache_wrapped(const size_t size, value fallback_val) {
-            this -> max_size = size;
-            this -> fifo_queue = std::deque < key_value_pair_t > ();
+            this -> max_size = size > 0 ? size : DEFAULT_SIZE;
+            this -> fifo_queue = std::deque <key_value_pair_t> ();
             this -> fallback_value = fallback_val;
         }
 
@@ -60,6 +60,7 @@ class fifo_cache_wrapped: public CacheI < key, value > {
             return true;
         }
 
+
         void move_to_head(const key &k) { //AI generated (Claude)
             std::unique_lock <std::mutex> lock(mtx);
 
@@ -80,6 +81,7 @@ class fifo_cache_wrapped: public CacheI < key, value > {
                 }
             }
         }
+
         bool remove(const key &k) {
             std::unique_lock <std::mutex> lock(mtx);
             for (auto it = fifo_queue.begin(); it != fifo_queue.end(); it++) {
@@ -135,8 +137,4 @@ class fifo_cache_wrapped: public CacheI < key, value > {
         value fallback_value;
         std::mutex mtx;
 };
-
-
-
-
 

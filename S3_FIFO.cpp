@@ -12,10 +12,9 @@ class S3_FIFO_Cache: public CacheI < key, value > {
 
         S3_FIFO_Cache(const size_t size, value fallback): max_size(size),
          fallback_value(fallback),
-         small_queue(size / 5, fallback),
-         main_queue(size * 4 / 5, fallback),
-         ghost_queue(150, fallback) {
-
+         small_queue(size * 10 / 100, fallback),
+         main_queue(size * 90 / 100, fallback),
+         ghost_queue(size, fallback) {
         }
 
         ~S3_FIFO_Cache() {}
@@ -47,8 +46,8 @@ class S3_FIFO_Cache: public CacheI < key, value > {
 
         bool remove(const key &k) {
             std::unique_lock < std::mutex > lock(mutex);
-
-            bool removed = this->ghost_queue.remove(k) || this->small_queue.remove(k) || this->main_queue.remove(k);
+            this->ghost_queue.remove(k);
+            bool removed = this->small_queue.remove(k) || this->main_queue.remove(k);
 
             if (removed) {
                 --current_size;
@@ -79,7 +78,7 @@ class S3_FIFO_Cache: public CacheI < key, value > {
             return res;
         }
 
-        int key_contained_in(const key &k) {
+        int key_contained_in(const key &k) { //Used for testing
             std::unique_lock < std::mutex > lock(mutex);
 
             int sum = 0;
@@ -98,7 +97,7 @@ class S3_FIFO_Cache: public CacheI < key, value > {
             return sum;
         }
 
-        void evict() {
+        void evict(){
             /*
              *  If S.size >= 10% * cache size, then evictS(). Else evictM()
              */
@@ -120,7 +119,7 @@ class S3_FIFO_Cache: public CacheI < key, value > {
         mutable std::mutex mutex;
         value fallback_value;
 
-        void evictS() {
+        void evictS(){
             /*
              *                1. Let t the tail of S.
              *                    if t.freq > 1, insert t to M (and evictM if M full)
@@ -132,7 +131,6 @@ class S3_FIFO_Cache: public CacheI < key, value > {
                 key_value_pair_t t = this->small_queue.get_tail();
 
                 if (t.second.get_hits() > 1) {
-
                     this->main_queue.insert(t.first, t.second.get_value()); //or: fallback-v
                     if (this->main_queue.get_current_size() >= (max_size * 90 / 100)) {
                         evictM();
@@ -162,7 +160,6 @@ class S3_FIFO_Cache: public CacheI < key, value > {
             while (!evicted && this->main_queue.get_current_size() > 0) {
                 key_value_pair_t t = this->main_queue.get_tail();
                 if (t.second.get_hits() > 0) {
-
                     this->main_queue.move_to_head(t.first); //decreases the frequency too
                 } else {
                     this->main_queue.remove(t.first);
@@ -171,6 +168,5 @@ class S3_FIFO_Cache: public CacheI < key, value > {
                 }
             }
         }
-
 
 };

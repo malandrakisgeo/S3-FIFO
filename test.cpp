@@ -112,13 +112,13 @@ void test_ghost_readmission() {
     
     // Insert and evict item 1 to ghost
     cache.insert(1, "value1");
-    for(int i = 2; i <= 11; i++) {
+    for(int i = 2; i <= 10; i++) {
         cache.insert(i, "value" + std::to_string(i));
     }
     assert(cache.key_contained_in(1) == 5); // In ghost
     
     // Re-insert item 1 (simulating cache hit on ghost entry)
-    cache.insert(1, "value1_new");
+    cache.insert(1, "value1");
     
     // Should go directly to main queue (ghost hit)
     assert(cache.key_contained_in(1) == 3); // 3 = main queue
